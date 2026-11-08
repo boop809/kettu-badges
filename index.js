@@ -1,7 +1,7 @@
 (function(exports, metro, metroCommon, React, ReactNative, plugin, storage, ui, assets, patcher, components) {
     "use strict";
 
-    const { findByStoreName, findByProps } = metro || {};
+    const { findByStoreName, findByProps, findByName } = metro || {};
     const { View, Text, ScrollView } = ReactNative || {};
     const Forms = components?.Forms || (findByProps && findByProps("FormRow", "FormSwitchRow"));
     const TableRowGroup = (findByProps && findByProps("TableRowGroup")?.TableRowGroup) || Forms?.FormSection;
@@ -10,80 +10,14 @@
 
     const pluginStorage = plugin?.storage || storage?.storage || {};
 
-    const CDN_BASE = "https://cdn.jsdelivr.net/gh/merlinfuchs/discord-badges/PNG/";
-
     const BADGES = [
         { 
             key: "EARLY_SUPPORTER", 
-            label: "Early Supporter (Pig Badge)", 
+            label: "Early Supporter", 
             flag: 1 << 9, 
             id: "early_supporter", 
             desc: "Early Supporter", 
-            icon: CDN_BASE + "early_supporter.png" 
-        },
-        { 
-            key: "ACTIVE_DEVELOPER", 
-            label: "Active Developer", 
-            flag: 1 << 22, 
-            id: "active_developer", 
-            desc: "Active Developer", 
-            icon: CDN_BASE + "active_developer.png" 
-        },
-        { 
-            key: "BUG_HUNTER_LEVEL_2", 
-            label: "Bug Hunter Level 2 (Gold)", 
-            flag: 1 << 14, 
-            id: "bug_hunter_level_2", 
-            desc: "Discord Bug Hunter", 
-            icon: CDN_BASE + "bug_hunter_level_2.png" 
-        },
-        { 
-            key: "BUG_HUNTER_LEVEL_1", 
-            label: "Bug Hunter Level 1 (Green)", 
-            flag: 1 << 3, 
-            id: "bug_hunter_level_1", 
-            desc: "Discord Bug Hunter", 
-            icon: CDN_BASE + "bug_hunter_level_1.png" 
-        },
-        { 
-            key: "STAFF", 
-            label: "Discord Staff", 
-            flag: 1 << 0, 
-            id: "staff", 
-            desc: "Discord Staff", 
-            icon: CDN_BASE + "staff.png" 
-        },
-        { 
-            key: "PARTNER", 
-            label: "Partnered Server Owner", 
-            flag: 1 << 1, 
-            id: "partner", 
-            desc: "Discord Partner", 
-            icon: CDN_BASE + "partnered_server_owner.png" 
-        },
-        { 
-            key: "HYPESQUAD_EVENTS", 
-            label: "HypeSquad Events Coordinator", 
-            flag: 1 << 2, 
-            id: "hypesquad", 
-            desc: "HypeSquad Events", 
-            icon: CDN_BASE + "hypesquad_events.png" 
-        },
-        { 
-            key: "EARLY_VERIFIED_BOT_DEVELOPER", 
-            label: "Early Verified Bot Developer", 
-            flag: 1 << 17, 
-            id: "verified_developer", 
-            desc: "Early Verified Bot Developer", 
-            icon: CDN_BASE + "early_verified_developer.png" 
-        },
-        { 
-            key: "CERTIFIED_MODERATOR", 
-            label: "Certified Discord Moderator", 
-            flag: 1 << 18, 
-            id: "certified_moderator", 
-            desc: "Discord Certified Moderator Alumni", 
-            icon: CDN_BASE + "certified_moderator.png" 
+            icon: "7060786766c9c840eb3019e725d2b358" 
         },
         { 
             key: "HOUSE_BRAVERY", 
@@ -91,7 +25,7 @@
             flag: 1 << 6, 
             id: "hypesquad_house_1", 
             desc: "HypeSquad Bravery", 
-            icon: CDN_BASE + "hypesquad_bravery.png" 
+            icon: "8a88d63823d8a71cd5e390baa45efa02" 
         },
         { 
             key: "HOUSE_BRILLIANCE", 
@@ -99,7 +33,7 @@
             flag: 1 << 7, 
             id: "hypesquad_house_2", 
             desc: "HypeSquad Brilliance", 
-            icon: CDN_BASE + "hypesquad_brilliance.png" 
+            icon: "011940fd013da3f7fb926e4a1cd2e618" 
         },
         { 
             key: "HOUSE_BALANCE", 
@@ -107,7 +41,47 @@
             flag: 1 << 8, 
             id: "hypesquad_house_3", 
             desc: "HypeSquad Balance", 
-            icon: CDN_BASE + "hypesquad_balance.png" 
+            icon: "3aa41de486fa12454c3761e8e223442e" 
+        },
+        { 
+            key: "BUG_HUNTER_LEVEL_1", 
+            label: "Bug Hunter Level 1", 
+            flag: 1 << 3, 
+            id: "bug_hunter_level_1", 
+            desc: "Discord Bug Hunter", 
+            icon: "2717692c7dca7289b35297368a940dd0" 
+        },
+        { 
+            key: "BUG_HUNTER_LEVEL_2", 
+            label: "Bug Hunter Level 2", 
+            flag: 1 << 14, 
+            id: "bug_hunter_level_2", 
+            desc: "Discord Bug Hunter", 
+            icon: "848f79194d4be5ff5f81505cbd0ce1e6" 
+        },
+        { 
+            key: "HYPESQUAD_EVENTS", 
+            label: "HypeSquad Events Coordinator", 
+            flag: 1 << 2, 
+            id: "hypesquad", 
+            desc: "HypeSquad Events", 
+            icon: "bf01d1073931f921909045f3a39fd264" 
+        },
+        { 
+            key: "EARLY_VERIFIED_BOT_DEVELOPER", 
+            label: "Early Verified Bot Developer", 
+            flag: 1 << 17, 
+            id: "verified_developer", 
+            desc: "Early Verified Bot Developer", 
+            icon: "6df5892e0f35b051f8b61eace34f4967" 
+        },
+        { 
+            key: "CERTIFIED_MODERATOR", 
+            label: "Certified Discord Moderator", 
+            flag: 1 << 18, 
+            id: "certified_moderator", 
+            desc: "Discord Certified Moderator Alumni", 
+            icon: "fee1624003e2fee35cb398e125dc479b" 
         }
     ];
 
@@ -154,42 +128,6 @@
         }
     }
 
-    function applyBadgesToProfile(profile) {
-        if (!profile || typeof profile !== "object") return;
-        
-        if (!Array.isArray(profile.badges)) {
-            profile.badges = [];
-        }
-
-        for (const b of BADGES) {
-            if (pluginStorage[b.key]) {
-                const alreadyExists = profile.badges.some(x => x && (x.id === b.id || x.description === b.desc));
-                if (!alreadyExists) {
-                    profile.badges.push({
-                        id: b.id,
-                        description: b.desc,
-                        icon: b.icon,
-                        src: b.icon,
-                        image: b.icon,
-                        url: b.icon,
-                        link: "https://discord.com"
-                    });
-                } else {
-                    const existing = profile.badges.find(x => x && (x.id === b.id || x.description === b.desc));
-                    if (existing) {
-                        existing.icon = b.icon;
-                        existing.src = b.icon;
-                        existing.image = b.icon;
-                    }
-                }
-            }
-        }
-
-        if (profile.user) {
-            applyBadgesToUser(profile.user);
-        }
-    }
-
     function isTarget(userId, currentUserId) {
         if (!userId) return false;
         if (pluginStorage.targetUserId && pluginStorage.targetUserId.trim().length > 0) {
@@ -201,16 +139,74 @@
         return true;
     }
 
+    function getBadgeItem(b) {
+        return {
+            id: b.id,
+            description: b.desc,
+            icon: b.icon,
+            source: { uri: "https://cdn.discordapp.com/badge-icons/" + b.icon + ".png" }
+        };
+    }
+
     const pluginDef = {
         onLoad() {
             unpatches = [];
             if (typeof pluginStorage.selfOnly === "undefined") pluginStorage.selfOnly = true;
             if (typeof pluginStorage.EARLY_SUPPORTER === "undefined") pluginStorage.EARLY_SUPPORTER = true;
-            if (typeof pluginStorage.ACTIVE_DEVELOPER === "undefined") pluginStorage.ACTIVE_DEVELOPER = true;
 
             const UserStore = findByStoreName ? findByStoreName("UserStore") : (findByProps && findByProps("getCurrentUser", "getUser"));
             const UserProfileStore = findByStoreName ? findByStoreName("UserProfileStore") : (findByProps && findByProps("getUserProfile"));
 
+            // 1. Hook ProfileBadge component
+            const ProfileBadge = (findByName && findByName("ProfileBadge", false)) || (findByProps && findByProps("ProfileBadge"));
+            if (ProfileBadge && patcher) {
+                const targetFn = typeof ProfileBadge === "function" ? "default" : (ProfileBadge.ProfileBadge ? "ProfileBadge" : "default");
+                try {
+                    unpatches.push(
+                        patcher.before(targetFn, ProfileBadge, (args) => {
+                            const props = args[0];
+                            if (props?.id) {
+                                const matching = BADGES.find(b => b.id === props.id);
+                                if (matching) {
+                                    props.icon = matching.icon;
+                                    props.source = { uri: "https://cdn.discordapp.com/badge-icons/" + matching.icon + ".png" };
+                                    props.label = matching.desc;
+                                }
+                            }
+                        })
+                    );
+                } catch (e) {}
+            }
+
+            // 2. Patch useBadges hook (primary badge provider for Discord Mobile)
+            const badgeModule = (findByName && findByName("useBadges", false)) || (findByProps && findByProps("useBadges"));
+            if (badgeModule && patcher) {
+                const fnName = badgeModule.useBadges ? "useBadges" : "default";
+                try {
+                    unpatches.push(
+                        patcher.after(fnName, badgeModule, ([user], result) => {
+                            if (!user || !result || !Array.isArray(result)) return result;
+                            const curId = UserStore?.getCurrentUser()?.id;
+                            const uid = user.userId || user.id;
+                            if (isTarget(uid, curId)) {
+                                for (const b of BADGES) {
+                                    if (pluginStorage[b.key]) {
+                                        const idx = result.findIndex(x => x && x.id === b.id);
+                                        if (idx === -1) {
+                                            result.push(getBadgeItem(b));
+                                        } else {
+                                            result[idx] = getBadgeItem(b);
+                                        }
+                                    }
+                                }
+                            }
+                            return result;
+                        })
+                    );
+                } catch (e) {}
+            }
+
+            // 3. Patch UserStore to update flags
             if (UserStore && patcher) {
                 unpatches.push(
                     patcher.after("getCurrentUser", UserStore, (_, ret) => {
@@ -229,19 +225,29 @@
                 );
             }
 
-            if (UserProfileStore && patcher) {
-                if (typeof UserProfileStore.getUserProfile === "function") {
-                    unpatches.push(
-                        patcher.after("getUserProfile", UserProfileStore, (args, ret) => {
-                            const curId = UserStore?.getCurrentUser()?.id;
-                            const targetId = ret?.userId || ret?.user?.id || args?.[0];
-                            if (isTarget(targetId, curId)) {
-                                applyBadgesToProfile(ret);
+            // 4. Patch UserProfileStore
+            if (UserProfileStore && patcher && typeof UserProfileStore.getUserProfile === "function") {
+                unpatches.push(
+                    patcher.after("getUserProfile", UserProfileStore, (args, ret) => {
+                        const curId = UserStore?.getCurrentUser()?.id;
+                        const targetId = ret?.userId || ret?.user?.id || args?.[0];
+                        if (isTarget(targetId, curId) && ret) {
+                            if (!Array.isArray(ret.badges)) ret.badges = [];
+                            for (const b of BADGES) {
+                                if (pluginStorage[b.key]) {
+                                    const idx = ret.badges.findIndex(x => x && x.id === b.id);
+                                    if (idx === -1) {
+                                        ret.badges.push(getBadgeItem(b));
+                                    } else {
+                                        ret.badges[idx] = getBadgeItem(b);
+                                    }
+                                }
                             }
-                            return ret;
-                        })
-                    );
-                }
+                            if (ret.user) applyBadgesToUser(ret.user);
+                        }
+                        return ret;
+                    })
+                );
             }
         },
         onUnload() {
