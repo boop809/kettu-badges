@@ -3,10 +3,13 @@
   "description": "Spoof client-side Discord profile badges (Early Supporter, Staff, Active Dev, Bug Hunter, etc.) in Kettu v1.4.3 / Vendetta.",
   "authors": [
     {
-      "name": "Custom",
+      "name": "boop809",
       "id": "0"
     }
   ],
   "main": "index.js",
-  "version": "1.0.0"
+  "vendetta": {
+    "icon": "ic_badge_staff"
+  },
+  "hash": "ed0f39c4c0b4030209dae465e51c880c4b2a56b3f9c08eb90d828fadbbd60fbc"
 }
