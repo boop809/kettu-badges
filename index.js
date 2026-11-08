@@ -1,47 +1,14 @@
-(() => {
-    const v = window.vendetta || {};
-    const { metro, patcher, storage: vStorage } = v;
+(function(exports, metro, metroCommon, React, ReactNative, plugin, storage, ui, assets, patcher, components) {
+    "use strict";
 
-    const findByStoreName = metro?.findByStoreName;
-    const findByProps = metro?.findByProps;
-    const common = metro?.common || {};
-    const React = common.React || window.React;
-    const ReactNative = common.ReactNative || findByProps("ScrollView", "View");
-    const { ScrollView, View, Text } = ReactNative || {};
+    const { findByStoreName, findByProps } = metro || {};
+    const { View, Text, ScrollView } = ReactNative || {};
+    const Forms = components?.Forms || (findByProps && findByProps("FormRow", "FormSwitchRow"));
+    const TableRowGroup = (findByProps && findByProps("TableRowGroup")?.TableRowGroup) || Forms?.FormSection;
+    const TableSwitchRow = (findByProps && findByProps("TableSwitchRow")?.TableSwitchRow) || Forms?.FormSwitchRow;
+    const TableRow = (findByProps && findByProps("TableRow")?.TableRow) || Forms?.FormRow;
 
-    const Forms = v.ui?.components?.Forms || findByProps("FormRow", "FormSwitchRow");
-    const FormRow = Forms?.FormRow;
-    const FormSwitchRow = Forms?.FormSwitchRow;
-    const FormSection = Forms?.FormSection;
-    const FormInput = Forms?.FormInput;
-
-    const storage = (vStorage && vStorage.useProxy) 
-        ? vStorage.useProxy(vStorage) 
-        : (vStorage || {});
-
-    // Default settings
-    if (!storage.badges) {
-        storage.badges = {
-            EARLY_SUPPORTER: true,
-            ACTIVE_DEVELOPER: true,
-            BUG_HUNTER_LEVEL_2: false,
-            STAFF: false,
-            PARTNER: false,
-            HYPESQUAD_EVENTS: false,
-            BUG_HUNTER_LEVEL_1: false,
-            EARLY_VERIFIED_BOT_DEVELOPER: false,
-            CERTIFIED_MODERATOR: false,
-            HOUSE_BRAVERY: false,
-            HOUSE_BRILLIANCE: false,
-            HOUSE_BALANCE: false
-        };
-    }
-    if (typeof storage.selfOnly === "undefined") {
-        storage.selfOnly = true;
-    }
-    if (typeof storage.targetUserId === "undefined") {
-        storage.targetUserId = "";
-    }
+    const pluginStorage = plugin?.storage || storage?.storage || {};
 
     const BADGES = [
         { key: "EARLY_SUPPORTER", label: "Early Supporter (Pig Badge)", flag: 1 << 9 },
@@ -60,21 +27,20 @@
 
     let unpatches = [];
 
-    function calculateBadgeFlags(existingFlags) {
-        let flags = Number(existingFlags) || 0;
-        for (const badge of BADGES) {
-            if (storage.badges?.[badge.key]) {
-                flags |= badge.flag;
+    function calculateFlags(originalFlags) {
+        let flags = Number(originalFlags) || 0;
+        for (const b of BADGES) {
+            if (pluginStorage[b.key]) {
+                flags |= b.flag;
             }
         }
         return flags;
     }
 
-    function applyBadgesToUser(user) {
+    function applyBadges(user) {
         if (!user || typeof user !== "object") return;
-        
-        const originalPublicFlags = user.publicFlags ?? user.public_flags ?? 0;
-        const newFlags = calculateBadgeFlags(originalPublicFlags);
+        const curFlags = user.publicFlags ?? user.public_flags ?? user.flags ?? 0;
+        const newFlags = calculateFlags(curFlags);
 
         try {
             Object.defineProperty(user, "publicFlags", {
@@ -98,157 +64,118 @@
         } catch (e) {
             user.publicFlags = newFlags;
             user.flags = newFlags;
-            if (user.public_flags !== undefined) {
-                user.public_flags = newFlags;
-            }
+            if (user.public_flags !== undefined) user.public_flags = newFlags;
         }
     }
 
-    function isTargetUser(user, currentUserId) {
-        if (!user || !user.id) return false;
-        if (storage.targetUserId && storage.targetUserId.trim().length > 0) {
-            return user.id === storage.targetUserId.trim();
+    function isTarget(user, currentUserId) {
+        if (!user?.id) return false;
+        if (pluginStorage.targetUserId && pluginStorage.targetUserId.trim().length > 0) {
+            return user.id === pluginStorage.targetUserId.trim();
         }
-        if (storage.selfOnly) {
+        if (pluginStorage.selfOnly) {
             return user.id === currentUserId;
         }
         return true;
     }
 
-    function onLoad() {
-        unpatches = [];
-        const UserStore = findByStoreName ? findByStoreName("UserStore") : findByProps("getCurrentUser", "getUser");
-        const UserProfileStore = findByStoreName ? findByStoreName("UserProfileStore") : findByProps("getUserProfile");
+    const pluginDef = {
+        onLoad() {
+            unpatches = [];
+            if (typeof pluginStorage.selfOnly === "undefined") pluginStorage.selfOnly = true;
+            if (typeof pluginStorage.EARLY_SUPPORTER === "undefined") pluginStorage.EARLY_SUPPORTER = true;
+            if (typeof pluginStorage.ACTIVE_DEVELOPER === "undefined") pluginStorage.ACTIVE_DEVELOPER = true;
 
-        if (UserStore && patcher) {
-            // Patch getCurrentUser
-            unpatches.push(
-                patcher.after("getCurrentUser", UserStore, (_, ret) => {
-                    if (ret) {
-                        applyBadgesToUser(ret);
-                    }
-                    return ret;
-                })
-            );
+            const UserStore = findByStoreName ? findByStoreName("UserStore") : (findByProps && findByProps("getCurrentUser", "getUser"));
+            const UserProfileStore = findByStoreName ? findByStoreName("UserProfileStore") : (findByProps && findByProps("getUserProfile"));
 
-            // Patch getUser
-            unpatches.push(
-                patcher.after("getUser", UserStore, (args, ret) => {
-                    if (ret) {
-                        const currentUserId = UserStore.getCurrentUser()?.id;
-                        if (isTargetUser(ret, currentUserId)) {
-                            applyBadgesToUser(ret);
-                        }
-                    }
-                    return ret;
-                })
-            );
-        }
-
-        if (UserProfileStore && patcher) {
-            if (typeof UserProfileStore.getUserProfile === "function") {
+            if (UserStore && patcher) {
                 unpatches.push(
-                    patcher.after("getUserProfile", UserProfileStore, (args, ret) => {
-                        if (ret && ret.user) {
-                            const currentUserId = UserStore?.getCurrentUser()?.id;
-                            if (isTargetUser(ret.user, currentUserId)) {
-                                applyBadgesToUser(ret.user);
-                            }
+                    patcher.after("getCurrentUser", UserStore, (_, ret) => {
+                        if (ret) applyBadges(ret);
+                        return ret;
+                    })
+                );
+                unpatches.push(
+                    patcher.after("getUser", UserStore, (_, ret) => {
+                        if (ret) {
+                            const curId = UserStore.getCurrentUser()?.id;
+                            if (isTarget(ret, curId)) applyBadges(ret);
                         }
                         return ret;
                     })
                 );
             }
-        }
-    }
 
-    function onUnload() {
-        for (const unpatch of unpatches) {
-            try {
-                if (typeof unpatch === "function") unpatch();
-            } catch (err) {
-                console.error("[CustomBadges] Error unpatching:", err);
+            if (UserProfileStore && patcher && typeof UserProfileStore.getUserProfile === "function") {
+                unpatches.push(
+                    patcher.after("getUserProfile", UserProfileStore, (_, ret) => {
+                        if (ret?.user) {
+                            const curId = UserStore?.getCurrentUser()?.id;
+                            if (isTarget(ret.user, curId)) applyBadges(ret.user);
+                        }
+                        return ret;
+                    })
+                );
             }
-        }
-        unpatches = [];
-    }
+        },
+        onUnload() {
+            for (const u of unpatches) {
+                try { if (typeof u === "function") u(); } catch (err) {}
+            }
+            unpatches = [];
+        },
+        settings() {
+            if (storage?.useProxy) storage.useProxy(pluginStorage);
+            const [state, setState] = React ? React.useState({ ...pluginStorage }) : [{}, () => {}];
 
-    function Settings() {
-        if (!React) {
-            return null;
-        }
+            const toggle = (k) => {
+                const next = !pluginStorage[k];
+                pluginStorage[k] = next;
+                setState({ ...pluginStorage });
+            };
 
-        const [state, setState] = React.useState({ ...storage.badges });
-        const [selfOnly, setSelfOnly] = React.useState(storage.selfOnly);
-        const [targetUserId, setTargetUserId] = React.useState(storage.targetUserId || "");
+            const toggleSelfOnly = () => {
+                const next = !pluginStorage.selfOnly;
+                pluginStorage.selfOnly = next;
+                setState({ ...pluginStorage });
+            };
 
-        const toggleBadge = (key) => {
-            const next = !state[key];
-            const updated = { ...state, [key]: next };
-            setState(updated);
-            storage.badges = updated;
-        };
+            const Container = TableRowGroup || View;
+            const Switch = TableSwitchRow || Forms?.FormSwitchRow;
 
-        const toggleSelfOnly = () => {
-            const next = !selfOnly;
-            setSelfOnly(next);
-            storage.selfOnly = next;
-        };
+            if (!React) return null;
 
-        const onTargetUserChange = (val) => {
-            setTargetUserId(val);
-            storage.targetUserId = val;
-        };
-
-        return React.createElement(
-            ScrollView || View,
-            { style: { flex: 1, padding: 12 } },
-            FormSection ? React.createElement(
-                FormSection,
-                { title: "Target Options" },
-                FormSwitchRow ? React.createElement(FormSwitchRow, {
-                    label: "Apply To Self Only",
-                    subLabel: "When enabled, badges only apply to your own account",
-                    value: selfOnly,
-                    onValueChange: toggleSelfOnly
-                }) : null,
-                FormInput ? React.createElement(FormInput, {
-                    title: "Custom Target User ID (Optional)",
-                    placeholder: "Leave empty to use current user",
-                    value: targetUserId,
-                    onChange: onTargetUserChange
-                }) : null
-            ) : null,
-            FormSection ? React.createElement(
-                FormSection,
-                { title: "Choose Badges To Add / Spoof" },
-                BADGES.map(b => (
-                    FormSwitchRow ? React.createElement(FormSwitchRow, {
-                        key: b.key,
-                        label: b.label,
-                        value: !!state[b.key],
-                        onValueChange: () => toggleBadge(b.key)
-                    }) : (
-                        FormRow ? React.createElement(FormRow, {
+            return React.createElement(
+                ScrollView || View,
+                { style: { flex: 1, padding: 12 } },
+                Container ? React.createElement(
+                    Container,
+                    { title: "Target" },
+                    Switch ? React.createElement(Switch, {
+                        label: "Apply To Self Only",
+                        subLabel: "When on, only your profile shows badges",
+                        value: !!state.selfOnly,
+                        onValueChange: toggleSelfOnly
+                    }) : null
+                ) : null,
+                Container ? React.createElement(
+                    Container,
+                    { title: "Badges" },
+                    BADGES.map(b => (
+                        Switch ? React.createElement(Switch, {
                             key: b.key,
                             label: b.label,
-                            subLabel: state[b.key] ? "Enabled" : "Disabled",
-                            onPress: () => toggleBadge(b.key)
+                            value: !!state[b.key],
+                            onValueChange: () => toggle(b.key)
                         }) : null
-                    )
-                ))
-            ) : null
-        );
-    }
-
-    const pluginExport = {
-        onLoad,
-        onUnload,
-        settings: Settings
+                    ))
+                ) : null
+            );
+        }
     };
 
-    if (typeof module !== "undefined" && module.exports) {
-        module.exports = pluginExport;
-    }
-    return pluginExport;
-})();
+    exports.default = pluginDef;
+    Object.defineProperty(exports, "__esModule", { value: true });
+    return exports;
+})({}, vendetta.metro, vendetta.metro.common, window.React, vendetta.metro.common.ReactNative, vendetta.plugin, vendetta.storage, vendetta.ui, vendetta.ui.assets, vendetta.patcher, vendetta.ui.components);
